@@ -321,9 +321,9 @@ Risk/Reward: 1:2.67
 
 ### Connect
 
-- 📧 Email: [your-email]
-- 🔗 GitHub: [your-github]
-- 📝 MQL5: [your-mql5-profile]
+- 📧 Email: [koshtenco@gmail.com]
+- 🔗 GitHub: [Shtenco]
+- 📝 MQL5: [[your-mql5-profile](https://www.mql5.com/ru/users/koshtenko)]
 
 ## 📄 License
 
