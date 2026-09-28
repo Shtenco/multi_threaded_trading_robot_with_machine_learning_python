@@ -377,3 +377,28 @@ flowchart LR
 README не должен утверждать больше, чем подтверждают код, тесты и сохранённые артефакты. Для рыночных/экономических проектов backtest или внутренняя переоценка не равны реализованной внешней прибыли; для AI/infra проектов benchmark или диаграмма не равны production-надежности.
 
 <!-- SYNERGY-FEDERATION-PASSPORT:END -->
+
+---
+
+# 🤖 Глубокий доказательный паспорт Multi-Threaded ML Robot
+
+## Реальность `main`
+
+Один крупный Python implementation + README. Заявленные `64–65% accuracy` и profitability не сопровождаются отдельным frozen report/test artifact в repo.
+
+## Главный validation risk
+
+Data augmentation через noise/time shifting/scaling/inversion и обычный 5-fold CV могут создавать leakage или завышать качество для time series, если folds не purged/chronological.
+
+```mermaid
+flowchart LR
+    DATA[Historical bars] --> FEAT[Indicators/features]
+    FEAT --> AUG[Augmentation]
+    AUG --> MODEL[XGBoost/GMM/Bagging]
+    MODEL --> CV[Legacy CV]
+    CV --> WF[Required purged walk-forward]
+```
+
+## Следующий рубеж
+
+rebuild evaluation in QuantLab → chronological splits → augmentation only inside train → transaction costs → portfolio overlap/concurrency audit → shadow execution.
