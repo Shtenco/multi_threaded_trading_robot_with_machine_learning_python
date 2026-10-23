@@ -44,7 +44,7 @@ The presence of source code proves implementation artifacts, **not** reproducibl
 
 **Current accuracy on examination dataset: 64-65%** with average profit significantly exceeding average loss.
 
-## 📋 Table of Contents
+##  Table of Contents
 
 - [Overview](#overview)
 - [Key Features](#key-features)
@@ -57,7 +57,7 @@ The presence of source code proves implementation artifacts, **not** reproducibl
 - [Author](#author)
 - [License](#license)
 
-## 🎯 Overview
+##  Overview
 
 This project implements a sophisticated multi-threaded algorithmic trading system that leverages:
 
@@ -69,7 +69,7 @@ This project implements a sophisticated multi-threaded algorithmic trading syste
 
 The system is designed to trade multiple currency pairs simultaneously while maintaining strict portfolio risk limits and adapting to changing market conditions through intelligent clustering of market regimes.
 
-## ⚡ Key Features
+##  Key Features
 
 ### Machine Learning Pipeline
 
@@ -110,7 +110,7 @@ The system is designed to trade multiple currency pairs simultaneously while mai
 - **Position Synchronization**: Automatic position flag updates
 - **Graceful Shutdown**: Coordinated thread termination
 
-## 🏗️ System Architecture
+##  System Architecture
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     MAIN THREAD                              │
@@ -151,7 +151,7 @@ The system is designed to trade multiple currency pairs simultaneously while mai
         └──────────────────────────────┘
 ```
 
-## 🛠️ Installation
+##  Installation
 
 ### Prerequisites
 - Python 3.8+
@@ -194,7 +194,7 @@ MAX_OPEN_TRADES: int = 6              # Maximum positions
 symbols = ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "EURGBP"]
 ```
 
-## 📊 Technical Details
+##  Technical Details
 
 ### Data Processing Pipeline
 ```python
@@ -252,7 +252,7 @@ volume = risk_per_instrument / risk_per_lot
 normalized_volume = round(volume / lot_step) * lot_step
 ```
 
-## 🚀 Usage
+##  Usage
 
 ### Starting the System
 ```bash
@@ -279,7 +279,7 @@ Position opened EURUSD: Buy, lot=0.48, spread=2.1 pips
 
 The system automatically terminates when `all_symbols_done = True` flag is set by any thread, or via Ctrl+C.
 
-## 📈 Results
+##  Results
 
 ### Current Performance
 
@@ -300,7 +300,7 @@ Potential Profit: $384
 Risk/Reward: 1:2.67
 ```
 
-## 🔮 Future Development
+##  Future Development
 
 ### Near-Term Improvements
 
@@ -336,15 +336,15 @@ Risk/Reward: 1:2.67
    - 1000+ core virtual machines
    - Auto-scaling resources
 
-## 👨‍💻 Author
+## ‍ Author
 
 **Yevgeniy Koshtenko**
 
-- 🌍 Location: Kostanay, Kazakhstan
-- 💼 Experience: 10 years in algorithmic trading (since 2016)
-- 📚 Research: 100+ published articles on ML and trading
-- 💻 Codebase: 680,000 lines MQL5 + 1,200,000 lines Python
-- 🔬 Expertise: Python, MQL5, ML, Quantum Computing, Data Engineering
+-  Location: Kostanay, Kazakhstan
+-  Experience: 10 years in algorithmic trading (since 2016)
+-  Research: 100+ published articles on ML and trading
+-  Codebase: 680,000 lines MQL5 + 1,200,000 lines Python
+-  Expertise: Python, MQL5, ML, Quantum Computing, Data Engineering
 
 ### Project Portfolio
 
@@ -356,19 +356,19 @@ Risk/Reward: 1:2.67
 
 ### Connect
 
-- 📧 Email: [koshtenco@gmail.com]
-- 🔗 GitHub: [Shtenco]
-- 📝 MQL5: [[my-mql5-profile](https://www.mql5.com/ru/users/koshtenko)]
+-  Email: [koshtenco@gmail.com]
+-  GitHub: [Shtenco]
+-  MQL5: [[my-mql5-profile](https://www.mql5.com/ru/users/koshtenko)]
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License. See the `LICENSE` file for details.
 
-## ⚠️ Disclaimer
+##  Disclaimer
 
 This trading robot is for educational purposes only. Trading in financial markets involves high risk of capital loss. The author is not responsible for any financial losses resulting from the use of this software. Always conduct thorough testing on demo accounts before using real funds.
 
-## 🙏 Acknowledgments
+##  Acknowledgments
 
 - MetaQuotes for MetaTrader 5 platform
 - MQL5 community for support and inspiration
@@ -376,23 +376,23 @@ This trading robot is for educational purposes only. Trading in financial market
 
 ---
 
-**⭐ If this project was useful to you, please star it on GitHub!**
+** If this project was useful to you, please star it on GitHub!**
 
 
 <!-- SYNERGY-FEDERATION-PASSPORT:START -->
 ---
 
-## 🧭 SYNERGY federation passport
+##  SYNERGY federation passport
 
-**Домен:** 🤖 ML trading R&D  
+**Домен:**  ML trading R&D  
 **Архитектурный родитель:** [`synergy_midas_ai`](https://github.com/Shtenco/synergy_midas_ai)  
 **Архитектурный корень:** [`synergy_system`](https://github.com/Shtenco/synergy_system)
 
 ```mermaid
 flowchart LR
-    SYS[🧭 synergy_system] --> P[synergy_midas_ai]
+    SYS[ synergy_system] --> P[synergy_midas_ai]
     P --> THIS[multi_threaded_trading_robot_with_machine_learning_python]
-    THIS --> E[📦 Evidence / outputs]
+    THIS --> E[ Evidence / outputs]
 ```
 
 Связь выше показывает место в федерации и **не является доказательством runtime dependency**. Фактические зависимости должны подтверждаться импортами, API-контрактами, manifests, deployment-конфигурацией или тестами.
@@ -403,9 +403,9 @@ flowchart LR
 
 ### Навигация
 
-- [📚 Атлас всех 75 репозиториев](https://github.com/Shtenco/synergy_system/blob/main/docs/SYNERGY_REPOSITORY_ATLAS.md)
-- [🧾 Машиночитаемый registry](https://github.com/Shtenco/synergy_system/blob/main/registry/SYNERGY_REPOSITORIES.json)
-- [🧭 SYNERGY SYSTEM](https://github.com/Shtenco/synergy_system)
+- [ Атлас всех 75 репозиториев](https://github.com/Shtenco/synergy_system/blob/main/docs/SYNERGY_REPOSITORY_ATLAS.md)
+- [ Машиночитаемый registry](https://github.com/Shtenco/synergy_system/blob/main/registry/SYNERGY_REPOSITORIES.json)
+- [ SYNERGY SYSTEM](https://github.com/Shtenco/synergy_system)
 
 ### Общее правило утверждений
 
@@ -415,7 +415,7 @@ README не должен утверждать больше, чем подтве�
 
 ---
 
-# 🤖 Глубокий доказательный паспорт Multi-Threaded ML Robot
+#  Глубокий доказательный паспорт Multi-Threaded ML Robot
 
 ## Реальность `main`
 
