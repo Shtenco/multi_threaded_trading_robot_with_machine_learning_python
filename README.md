@@ -1,439 +1,113 @@
 <div align="center">
 
-<img src="assets/readme/hero.svg" width="100%" alt="PARALLEL ML TRADING project vector identity"/>
+<img src="assets/readme/hero.svg" width="100%" alt="Parallel ML Trading — quantitative engineering" />
 
-**Multithreaded MT5 analytics and ML model exploration**
+**PARALLEL ML TRADING / MT5 RESEARCH**
 
-[Overview](#engineering-overview) · [Architecture](#architecture-and-data-flow) · [Evidence](#validation-boundaries) · [Original technical dossier](#original-technical-dossier)
+Многопоточная обработка рыночных данных, признаки, XGBoost/Bagging, GMM и риск-управление: аудит исходного кода и научная программа исправлений.
+
+[Архитектура](#реальная-архитектура) · [Формулы](#математическая-модель) · [Проблемы](#выводы-аудита) · [Валидация](#требования-к-проверке) · [Запуск](#запуск)
 
 </div>
 
-## Engineering overview
+> **Статус: экспериментальный торговый код с возможностью передачи реальных приказов через MT5. Не использовать на финансируемом счёте без независимой проверки.** Опубликованные исторические проценты точности не воспроизведены на sealed out-of-sample данных.
 
-Multithreaded MT5 analytics and ML model exploration. Primary code entry points: `Multi-Threaded Trading Robot with Machine Learning.py`. This GitHub repository contains research assets and must not be interpreted as independently audited financial performance or production service.
+## Инженерная задача
 
-## Architecture and data flow
+Проект исследует объединение семи валютных инструментов в параллельном вычислительном потоке. Для каждого символа код получает данные MT5, рассчитывает широкий набор технических, статистических и объёмных признаков, формирует будущие метки, балансирует выборку, кластеризует данные GaussianMixture, выполняет RFECV и обучает ансамбль XGBoost/Bagging. Отдельные процедуры определяют размеры позиций и взаимодействуют с торговым терминалом.
+
+Профессиональная ценность текущей реализации — демонстрация многокомпонентного ML-конвейера и интеграции с торговым API; production-safe исполнение и реальное predictive superiority требуют отдельного доказательства.
+
+## Реальная архитектура
 
 ```mermaid
-flowchart LR
- I[Market and input data] --> R[Research implementations]
- R --> O[Features, decisions or visualizations]
- O --> V[Independent validation required]
+flowchart TD
+ MT5[MT5 bars / seven FX pairs] --> THREADS[Seven Python threads]
+ THREADS --> FEAT[Technical features and augmentation]
+ FEAT --> LABEL[Forward-looking labels]
+ LABEL --> BAL[RandomUnderSampler]
+ BAL --> GMM[GaussianMixture]
+ GMM --> RFECV[Feature selection / RFECV]
+ RFECV --> SPLIT[Chronological split by FORWARD]
+ SPLIT --> MODEL[Bagging of XGBClassifier / GridSearchCV]
+ MODEL --> ACC[Accuracy estimate]
+ MODEL --> MT5ORD[Potential live MT5 order_send]
+ SIZE[Portfolio risk sizing] --> MT5ORD
 ```
 
-The graph illustrates research responsibilities, not validated real-time connectivity.
+Функции в [главном исходнике](Multi-Threaded%20Trading%20Robot%20with%20Machine%20Learning.py): `retrieve_data`, `augment_data`, `markup_data`, `label_data`, `generate_new_features`, `cluster_features_by_gmm`, `feature_engineering`, `train_xgboost_classifier`, `calculate_portfolio_position_sizes`, `online_trading`, `process_symbol`.
 
-## Validation boundaries
+В отличие от фонового расчёта индикаторов, `online_trading` содержит **прямой вызов `mt5.order_send`**. Это означает, что риск использования кода не ограничен исследовательской отчётностью.
 
-> A reported 64–65% accuracy requires independently reproduced leakage-free OOS validation and risk accounting.
+## Математическая модель
 
-The presence of source code proves implementation artifacts, **not** reproducible predictive superiority, live trading or investor returns. Validate dataset timing, splits, costs, model versions and results separately.
+Метка роста в `markup_data` задаётся условием абсолютного движения:
 
-## Original technical dossier
+$$
+y_t=\mathbf{1}\{C_{t+1}>C_t+\delta\},\quad \delta=0.00002.
+$$
 
----
+Это **ценовое изменение**, а не относительная доходность; применение одной абсолютной величины к JPY и остальным валютным инструментам не обеспечивает сопоставимой значимости. Конечное наблюдение при `shift(-1)` требует отдельного удаления, а не присвоения нулевой метки.
 
-# Multi-Threaded Trading Robot with Machine Learning
+В `label_data` будущий горизонт выбирается случайно от 2 до 72 строк, поэтому для одного и того же датасета без фиксированного seed могут формироваться разные метки. Дополнительно используются максимумы и минимумы фрагмента будущих цен. Горизонты индексации должны быть точно определены, поскольку OHLC текущей свечи и следующей свечи имеют различные моменты доступности.
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![MetaTrader5](https://img.shields.io/badge/MetaTrader-5-green.svg)](https://www.metatrader5.com/)
-[![XGBoost](https://img.shields.io/badge/XGBoost-Latest-orange.svg)](https://xgboost.readthedocs.io/)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+Планируемый риск на один инструмент при портфельном бюджете $R$ и числе инструментов $N$:
 
-> An intelligent trading system combining machine learning and parallel computing for automated Forex trading. Hybrid Python + MetaTrader 5 architecture where Python handles analytics and model training, while MT5 executes trading operations.
+$$
+R_i=\frac{R}{N}.
+$$
 
-**Current accuracy on examination dataset: 64-65%** with average profit significantly exceeding average loss.
+Размер позиции в лотах при стопе шириной $D$ **в единицах цены**, размере тика $\tau$, стоимости тика $v$ **в валюте счёта на один лот**:
 
-##  Table of Contents
+$$
+q_i=\frac{R_i}{(D/\tau)\,v}.
+$$
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [System Architecture](#system-architecture)
-- [Installation](#installation)
-- [Technical Details](#technical-details)
-- [Usage](#usage)
-- [Results](#results)
-- [Future Development](#future-development)
-- [Author](#author)
-- [License](#license)
+Это корректная размерная формула при неизменном tick value, линейном контракте и отсутствии gap/slippage. В исходнике вместо неё используется `300 * trade_tick_value` без учёта `trade_tick_size`; `300` именуется пипсами, но `order_send` задаёт стоп в **350 `symbol_info.point`**, а не в 300 пипсов. Фактический риск может отличаться от заявленного. Минимальный разрешённый лот принудительно подставляется даже тогда, когда он превышает бюджет риска.
 
-##  Overview
+## Выводы аудита
 
-This project implements a sophisticated multi-threaded algorithmic trading system that leverages:
+| Уровень | Подтверждённая проблема | Последствие |
+|:--|:--|:--|
+| P0 | `process_data` выполняет undersampling, GMM и RFECV **до** хронологического train/test | Утечка информации из тестового периода |
+| P0 | `RFECV(cv=5)` и `GridSearchCV(cv=5)` используют обычную K-fold вместо purged temporal splits | Перекрывающиеся будущие цели и optimistically biased accuracy |
+| P0 | `process_data(raw_data)` вызывает `label_data(..., SYMBOL)`, где глобальный `SYMBOL="EURUSD"` | Для остальных шести инструментов размер стопа/тейка определяется спецификацией EURUSD |
+| P0 | `online_trading` повторно использует `test_features.values`, включая исторические строки | Live inference не основан на новом последнем баре |
+| P0 | `mt5.order_send` передаётся из нескольких потоков без единого арбитра исполнения | Возможны race conditions по глобальному риску и количеству открытых сделок |
+| P0 | Размер позиции рассчитан из 300 `trade_tick_value`, а реальный SL задаётся 350 `point` | Риск на сделку и на портфель не ограничен заявленной формулой |
+| P1 | Условие спреда делит на `point`, но результат подписывает как «пипсы» | Ошибка интерпретации размерности |
+| P1 | Нет жёсткого запрета на увеличение риска после округления лота к минимуму брокера | Бюджет может быть превышен |
+| P1 | `GaussianMixture(n_components=30)` требует достаточной выборки и может стать неустойчивой | Обучение и кластеризация могут не сойтись |
+| P1 | Ограничение числа позиций и глобальные `SYMBOL_TRADES` читаются/меняются без общей блокировки | Неатомарный контроль количества позиций |
+| P1 | В коде предусмотрены десятки тысяч повторов `order_send` при ошибках | Риск длительной повторной отправки приказов |
+| P2 | XGBoost/Bagging использует `subsample=0.01` и `colsample_bytree=0.1` без ablation | Возможная высокая дисперсия / недообучение |
+| P2 | Нет сохранённых OOS-артефактов и запускаемых тестов в текущем корневом дереве | Не подтверждена статистическая и торговая эффективность |
 
-- **Machine Learning**: XGBoost with two-level ensembling (Gradient Boosting + Bagging)
-- **Parallel Computing**: Multiple currency pairs processed simultaneously in separate threads
-- **Advanced Risk Management**: Portfolio-level risk allocation with dynamic position sizing
-- **Data Augmentation**: 5x data multiplication through noise, scaling, shifting, and inversion
-- **Feature Engineering**: 25+ technical indicators plus synthetic feature generation
+**Важная граница:** `accuracy` относится к классификации искусственных меток и не равна вероятности прибыльной сделки. Из-за отбора примеров и временной утечки её нельзя интерпретировать как независимый показатель качества прогнозирования.
 
-The system is designed to trade multiple currency pairs simultaneously while maintaining strict portfolio risk limits and adapting to changing market conditions through intelligent clustering of market regimes.
+## Требования к проверке
 
-##  Key Features
+1. Заморозить исходный набор котировок, торговую сессию, часовой пояс, параметры инструментов и SHA256 данных.
+2. Создавать строго причинные метки и обучать все преобразования (GMM, undersampling, RFECV, модель) только на train внутри каждого fold.
+3. Использовать purged walk-forward с gap не меньше максимального горизонта цели, а затем sealed test.
+4. Сравнить с majority-class, momentum, logistic regression и простыми деревьями на одном тесте.
+5. Ввести единственный order executor с блокировкой портфельного риска, повторной сверкой `positions_get`, `order_check` и расчётом потерь через `order_calc_profit`.
+6. Проверить slippage, комиссии, margin, stop-out, limit-open-trades, повторные сделки и аварийное отключение терминала.
+7. Публиковать confusion matrix, calibration, net PnL, max drawdown, экспозиции, оборот, доверительные интервалы и сравнение с базовой стратегией.
 
-### Machine Learning Pipeline
+## Запуск
 
-- **XGBoost Classifier** with hyperparameter optimization via GridSearchCV
-- **Gaussian Mixture Models** for market regime clustering (6 components)
-- **Recursive Feature Elimination** (RFECV) for automatic feature selection
-- **BaggingClassifier** wrapper for meta-ensembling
-- **5-fold Cross-Validation** for robust model evaluation
-
-### Data Processing
-
-#### Technical Indicators (25+)
-- **Momentum**: RSI, MACD, Momentum, ROC, TRIX
-- **Volatility**: ATR, Bollinger Bands, Keltner Channels
-- **Oscillators**: Stochastic, Williams %R, CCI, MFI
-- **Trend**: Aroon, Efficiency Ratio, Fractal Analysis
-- **Volume**: Volume SMA Ratio, Price-Volume Trend, Chaikin Oscillator
-- **Cyclical**: Hour Sin/Cos, Day of Week Sin/Cos
-
-#### Data Augmentation Strategy
-1. **Noise Addition**: Gaussian noise (σ = 0.01) to simulate microstructure
-2. **Time Shifting**: +1 hour offset to capture temporal patterns
-3. **Scaling**: Random scaling (0.9-1.1) for different volatility regimes
-4. **Inversion**: Price inversion to learn mirror patterns
-
-### Risk Management
-
-- **Portfolio Risk Limit**: $1000 total across all positions
-- **Dynamic Position Sizing**: ATR-based lot calculation per instrument
-- **Fixed Stop Loss**: 300 pips with 800 pips take profit (1:2.67 risk/reward)
-- **Spread Filter**: Maximum 35 pips spread allowed
-- **Position Limits**: Maximum 6 concurrent positions
-
-### Multi-Threading Architecture
-
-- **Parallel Processing**: 7 currency pairs in separate threads
-- **Thread-Safe Logging**: Queue-based logging system
-- **Position Synchronization**: Automatic position flag updates
-- **Graceful Shutdown**: Coordinated thread termination
-
-##  System Architecture
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     MAIN THREAD                              │
-│  • Portfolio Initialization                                  │
-│  • Position Size Calculation                                 │
-│  • Thread Coordination                                       │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-        ┌──────────────┼──────────────┐
-        │              │              │
-┌───────▼───────┐ ┌────▼─────┐ ┌─────▼──────┐
-│  EURUSD THREAD│ │GBPUSD THD│ │ AUDUSD THD │  ... (7 threads)
-│               │ │          │ │            │
-│ 1. Data Load │ │          │ │            │
-│ 2. Augment   │ │          │ │            │
-│ 3. Label     │ │          │ │            │
-│ 4. Cluster   │ │          │ │            │
-│ 5. Feature   │ │          │ │            │
-│ 6. Train     │ │          │ │            │
-│ 7. Trade ↓   │ │          │ │            │
-└───────┬───────┘ └────┬─────┘ └─────┬──────┘
-        │              │              │
-        └──────────────┼──────────────┘
-                       │
-        ┌──────────────▼──────────────┐
-        │      GLOBAL RESOURCES        │
-        │  • POSITION_SIZES (Dict)     │
-        │  • SYMBOL_TRADES (Dict)      │
-        │  • log_queue (Queue)         │
-        │  • all_symbols_done (Flag)   │
-        └──────────────┬──────────────┘
-                       │
-        ┌──────────────▼──────────────┐
-        │     MetaTrader 5 API         │
-        │  • Quote Retrieval           │
-        │  • Order Execution           │
-        │  • Position Monitoring       │
-        └──────────────────────────────┘
-```
-
-##  Installation
-
-### Prerequisites
-- Python 3.8+
-- MetaTrader 5 Terminal
-- Windows OS (MT5 requirement)
-- Active MT5 account (demo or live)
-
-### Dependencies
 ```bash
-pip install -r requirements.txt
+git clone https://github.com/Shtenco/multi_threaded_trading_robot_with_machine_learning_python.git
+cd multi_threaded_trading_robot_with_machine_learning_python
+python -m pip install numpy pandas MetaTrader5 scikit-learn imbalanced-learn xgboost
+python "Multi-Threaded Trading Robot with Machine Learning.py"
 ```
 
-**requirements.txt:**
-```
-numpy>=1.21.0
-pandas>=1.3.0
-MetaTrader5>=5.0.4
-scikit-learn>=1.0.0
-xgboost>=1.5.0
-imbalanced-learn>=0.9.0
-```
+В исходнике задан Windows-путь `C:\Program Files\RoboForex MT5 Terminal\terminal64.exe`. Код способен отправлять реальные приказы: **не запускать на торговом счёте до выделения безопасного исследовательского режима**. Команды описывают зависимости по импортам, но не являются протоколом успешного выполнения.
 
-### Configuration
+## Технический вывод
 
-1. **Install MetaTrader 5** and open demo/live account
+Исходная система объединяет признаки, ансамблевое обучение, семисимвольную многопоточность и торговые API. Это полезное архитектурное основание для разработки количественной лаборатории. Однако нынешний порядок ML-операций и контроль исполнения не соответствуют требованиям честного OOS и безопасного промышленного торгового движка. Приоритет развития — причинная валидация и независимый портфельный риск-контур, а не маркетинговое обещание высокой точности.
 
-2. **Set terminal path** in code:
-```python
-TERMINAL_PATH: str = r"C:\Program Files\RoboForex MT5 Terminal\terminal64.exe"
-```
-
-3. **Configure risk parameters**:
-```python
-TOTAL_PORTFOLIO_RISK: float = 1000.0  # Total portfolio risk (USD)
-MAX_OPEN_TRADES: int = 6              # Maximum positions
-```
-
-4. **Select currency pairs**:
-```python
-symbols = ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "EURGBP"]
-```
-
-##  Technical Details
-
-### Data Processing Pipeline
-```python
-# 1. Load historical data (2021-2024)
-raw_data = retrieve_data(symbol)  # ~26,000 hourly bars
-
-# 2. Create 25+ technical indicators
-# RSI, MACD, ATR, Bollinger Bands, Stochastic, etc.
-
-# 3. Data augmentation (5x increase)
-augmented_data = augment_data(raw_data)  # ~130,000 examples
-
-# 4. Labeling with real trading conditions
-labeled_data = label_data(data, symbol)  # SL 300 pips, TP 800 pips
-
-# 5. Feature clustering (GMM)
-clustered_data = cluster_features_by_gmm(data, n_components=6)
-
-# 6. Synthetic feature generation
-generated_data = generate_new_features(data, num_features=10)
-
-# 7. Feature selection (RFECV)
-selected_data = feature_engineering(data, n_features_to_select=15)
-
-# 8. XGBoost + Bagging training
-model = train_xgboost_classifier(train_data, num_boost_rounds=1000)
-```
-
-### XGBoost Model Parameters
-```python
-xgb.XGBClassifier(
-    objective='binary:logistic',
-    max_depth=5,              # Prevent overfitting
-    learning_rate=0.2,        # Learning rate
-    n_estimators=300,         # Number of trees
-    subsample=0.01,           # 1% data per tree (aggressive regularization)
-    colsample_bytree=0.1,     # 10% features per tree
-    reg_alpha=1,              # L1 regularization
-    reg_lambda=1              # L2 regularization
-)
-```
-
-### Position Size Calculation
-```python
-# Per instrument:
-risk_per_instrument = TOTAL_PORTFOLIO_RISK / len(symbols)  # $142.86 for 7 pairs
-
-# Risk per standard lot
-risk_per_lot = 300 pips * tick_value
-
-# Position size
-volume = risk_per_instrument / risk_per_lot
-
-# Normalize to broker requirements
-normalized_volume = round(volume / lot_step) * lot_step
-```
-
-##  Usage
-
-### Starting the System
-```bash
-python trading_robot.py
-```
-
-### Monitoring
-
-The system outputs detailed logs to console:
-```
-=== Symbol Analysis EURUSD ===
-Point: 1e-05
-Trade tick value: 1.0
-Risk per 1 lot at SL 300 pips: 300.00 USD
-Calculated position size: 0.476190 lot
-Normalized size: 0.48 lot
-FINAL RISK: 144.00 USD
-
-Accuracy for symbol EURUSD: 64.23%
-Position opened EURUSD: Buy, lot=0.48, spread=2.1 pips
-```
-
-### Stopping the System
-
-The system automatically terminates when `all_symbols_done = True` flag is set by any thread, or via Ctrl+C.
-
-##  Results
-
-### Current Performance
-
-- **Examination dataset accuracy**: 64-65%
-- **Average profitable trade**: Significantly > average losing trade
-- **Several days of trading results**: Positive (see screenshots in article)
-- **Profitability simulations**: Encouraging at given win rate
-
-### Trading Example
-```
-Symbol: EURUSD
-Entry: 1.0850
-Stop Loss: 1.0820 (300 pips)
-Take Profit: 1.0930 (800 pips)
-Volume: 0.48 lot
-Risk: $144
-Potential Profit: $384
-Risk/Reward: 1:2.67
-```
-
-##  Future Development
-
-### Near-Term Improvements
-
-1. **Full MQL5 Migration**
-   - Custom ML libraries in MQL5
-   - Eliminate Python-MT5 API latency
-   - 10-50x performance improvement
-
-2. **Graphical Interface**
-   - Real-time dashboard monitoring
-   - Dynamic parameter management
-   - Alert and notification system
-
-3. **Enhanced Risk Management**
-   - Real-time correlation analysis
-   - Monte Carlo Value-at-Risk
-   - Automatic hedging system
-
-### Ambitious Goals
-
-4. **GAN for Synthetic Data**
-   - Generate 25-year price series
-   - Preserve market statistical properties
-   - Solve data scarcity problem
-
-5. **Ensemble of 100 Models**
-   - Specialization on market regimes
-   - Meta-classifier for regimes
-   - Unprecedented prediction accuracy
-
-6. **Google Cloud Platform Integration**
-   - Massively parallel training
-   - 1000+ core virtual machines
-   - Auto-scaling resources
-
-## ‍ Author
-
-**Yevgeniy Koshtenko**
-
--  Location: Kostanay, Kazakhstan
--  Experience: 10 years in algorithmic trading (since 2016)
--  Research: 100+ published articles on ML and trading
--  Codebase: 680,000 lines MQL5 + 1,200,000 lines Python
--  Expertise: Python, MQL5, ML, Quantum Computing, Data Engineering
-
-### Project Portfolio
-
-- High-frequency arbitrage system (HFT)
-- Computer vision for chart analysis (CNN)
-- Quantum computing on IBM Quantum
-- Central bank data mining + ML
-- Biological neural networks for forecasting
-
-### Connect
-
--  Email: [koshtenco@gmail.com]
--  GitHub: [Shtenco]
--  MQL5: [[my-mql5-profile](https://www.mql5.com/ru/users/koshtenko)]
-
-##  License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
-##  Disclaimer
-
-This trading robot is for educational purposes only. Trading in financial markets involves high risk of capital loss. The author is not responsible for any financial losses resulting from the use of this software. Always conduct thorough testing on demo accounts before using real funds.
-
-##  Acknowledgments
-
-- MetaQuotes for MetaTrader 5 platform
-- MQL5 community for support and inspiration
-- Developers of scikit-learn, XGBoost and other libraries
-
----
-
-** If this project was useful to you, please star it on GitHub!**
-
-
-<!-- SYNERGY-FEDERATION-PASSPORT:START -->
----
-
-##  SYNERGY federation passport
-
-**Домен:**  ML trading R&D  
-**Архитектурный родитель:** [`synergy_midas_ai`](https://github.com/Shtenco/synergy_midas_ai)  
-**Архитектурный корень:** [`synergy_system`](https://github.com/Shtenco/synergy_system)
-
-```mermaid
-flowchart LR
-    SYS[ synergy_system] --> P[synergy_midas_ai]
-    P --> THIS[multi_threaded_trading_robot_with_machine_learning_python]
-    THIS --> E[ Evidence / outputs]
-```
-
-Связь выше показывает место в федерации и **не является доказательством runtime dependency**. Фактические зависимости должны подтверждаться импортами, API-контрактами, manifests, deployment-конфигурацией или тестами.
-
-### Единая шкала доказательности
-
-`GREEN` = воспроизводимо подтверждено · `CANDIDATE` = реализация есть, доказательство неполное · `R&D` = эксперимент · `STUB` = архитектурный узел · `LEGACY` = provenance.
-
-### Навигация
-
-- [ Атлас всех 75 репозиториев](https://github.com/Shtenco/synergy_system/blob/main/docs/SYNERGY_REPOSITORY_ATLAS.md)
-- [ Машиночитаемый registry](https://github.com/Shtenco/synergy_system/blob/main/registry/SYNERGY_REPOSITORIES.json)
-- [ SYNERGY SYSTEM](https://github.com/Shtenco/synergy_system)
-
-### Общее правило утверждений
-
-README не должен утверждать больше, чем подтверждают код, тесты и сохранённые артефакты. Для рыночных/экономических проектов backtest или внутренняя переоценка не равны реализованной внешней прибыли; для AI/infra проектов benchmark или диаграмма не равны production-надежности.
-
-<!-- SYNERGY-FEDERATION-PASSPORT:END -->
-
----
-
-#  Глубокий доказательный паспорт Multi-Threaded ML Robot
-
-## Реальность `main`
-
-Один крупный Python implementation + README. Заявленные `64–65% accuracy` и profitability не сопровождаются отдельным frozen report/test artifact в repo.
-
-## Главный validation risk
-
-Data augmentation через noise/time shifting/scaling/inversion и обычный 5-fold CV могут создавать leakage или завышать качество для time series, если folds не purged/chronological.
-
-```mermaid
-flowchart LR
-    DATA[Historical bars] --> FEAT[Indicators/features]
-    FEAT --> AUG[Augmentation]
-    AUG --> MODEL[XGBoost/GMM/Bagging]
-    MODEL --> CV[Legacy CV]
-    CV --> WF[Required purged walk-forward]
-```
-
-## Следующий рубеж
-
-rebuild evaluation in QuantLab → chronological splits → augmentation only inside train → transaction costs → portfolio overlap/concurrency audit → shadow execution.
+[Исходники](https://github.com/Shtenco/multi_threaded_trading_robot_with_machine_learning_python) · [SYNERGY SYSTEM](https://github.com/Shtenco/synergy_system)
