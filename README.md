@@ -1,3 +1,38 @@
+<div align="center">
+
+<img src="assets/readme/hero.svg" width="100%" alt="PARALLEL ML TRADING project vector identity"/>
+
+**Multithreaded MT5 analytics and ML model exploration**
+
+[Overview](#engineering-overview) · [Architecture](#architecture-and-data-flow) · [Evidence](#validation-boundaries) · [Original technical dossier](#original-technical-dossier)
+
+</div>
+
+## Engineering overview
+
+Multithreaded MT5 analytics and ML model exploration. Primary code entry points: `Multi-Threaded Trading Robot with Machine Learning.py`. This GitHub repository contains research assets and must not be interpreted as independently audited financial performance or production service.
+
+## Architecture and data flow
+
+```mermaid
+flowchart LR
+ I[Market and input data] --> R[Research implementations]
+ R --> O[Features, decisions or visualizations]
+ O --> V[Independent validation required]
+```
+
+The graph illustrates research responsibilities, not validated real-time connectivity.
+
+## Validation boundaries
+
+> A reported 64–65% accuracy requires independently reproduced leakage-free OOS validation and risk accounting.
+
+The presence of source code proves implementation artifacts, **not** reproducible predictive superiority, live trading or investor returns. Validate dataset timing, splits, costs, model versions and results separately.
+
+## Original technical dossier
+
+---
+
 # Multi-Threaded Trading Robot with Machine Learning
 
 [![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
